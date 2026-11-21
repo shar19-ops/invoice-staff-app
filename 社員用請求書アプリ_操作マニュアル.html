@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ja">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社員用請求書アプリ 操作マニュアル</title>
+<style>
+  :root {
+    --bg: #f2f5f9;
+    --surface: #ffffff;
+    --surface-alt: #eaeff6;
+    --ink: #1b2430;
+    --ink-soft: #4c5a6e;
+    --ink-faint: #7c8aa0;
+    --border: #d7dfea;
+    --border-strong: #b9c5d6;
+    --accent: #24488f;
+    --accent-ink: #17275a;
+    --accent-soft: #e2eaf9;
+    --stamp: #a92c28;
+    --stamp-soft: #fbebe9;
+    --amber: #8a6113;
+    --amber-soft: #fbf1dc;
+    --shadow: 0 1px 2px rgba(23, 39, 90, 0.06), 0 8px 24px rgba(23, 39, 90, 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f131a;
+      --surface: #161c27;
+      --surface-alt: #1c2432;
+      --ink: #e7ecf5;
+      --ink-soft: #a7b3c6;
+      --ink-faint: #74839b;
+      --border: #2a3346;
+      --border-strong: #3a465e;
+      --accent: #7fa0e6;
+      --accent-ink: #dbe6fb;
+      --accent-soft: #1e2c4c;
+      --stamp: #e08c86;
+      --stamp-soft: #3a2325;
+      --amber: #e3bb70;
+      --amber-soft: #3a3220;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f131a;
+    --surface: #161c27;
+    --surface-alt: #1c2432;
+    --ink: #e7ecf5;
+    --ink-soft: #a7b3c6;
+    --ink-faint: #74839b;
+    --border: #2a3346;
+    --border-strong: #3a465e;
+    --accent: #7fa0e6;
+    --accent-ink: #dbe6fb;
+    --accent-soft: #1e2c4c;
+    --stamp: #e08c86;
+    --stamp-soft: #3a2325;
+    --amber: #e3bb70;
+    --amber-soft: #3a3220;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+  :root[data-theme="light"] {
+    --bg: #f2f5f9;
+    --surface: #ffffff;
+    --surface-alt: #eaeff6;
+    --ink: #1b2430;
+    --ink-soft: #4c5a6e;
+    --ink-faint: #7c8aa0;
+    --border: #d7dfea;
+    --border-strong: #b9c5d6;
+    --accent: #24488f;
+    --accent-ink: #17275a;
+    --accent-soft: #e2eaf9;
+    --stamp: #a92c28;
+    --stamp-soft: #fbebe9;
+    --amber: #8a6113;
+    --amber-soft: #fbf1dc;
+    --shadow: 0 1px 2px rgba(23, 39, 90, 0.06), 0 8px 24px rgba(23, 39, 90, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "Meiryo", sans-serif;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "Meiryo", sans-serif;
+    font-weight: 600;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  a { color: var(--accent); }
+
+  .shell {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    max-width: 1180px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- サイドナビ ---------- */
+
+  .toc {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 28px 18px 28px 24px;
+    border-right: 1px solid var(--border);
+    font-size: 13.5px;
+  }
+
+  @media (max-width: 860px) {
+    .toc {
+      position: static;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      padding: 18px 20px;
+    }
+    .toc ol { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+    .toc li { break-inside: avoid; }
+  }
+
+  .toc-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .toc-mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid var(--stamp);
+    color: var(--stamp);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+    font-family: "Meiryo", "Yu Gothic", "MS Gothic", sans-serif;
+  }
+
+  .toc-brand-text {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+  }
+
+  .toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: toc;
+  }
+
+  .toc li { counter-increment: toc; }
+
+  .toc a {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    padding: 6px 8px;
+    margin: 1px 0;
+    border-radius: 6px;
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .toc a::before {
+    content: counter(toc, decimal-leading-zero);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    color: var(--ink-faint);
+    flex-shrink: 0;
+  }
+
+  .toc a:hover { background: var(--surface-alt); color: var(--ink); }
+
+  /* ---------- メイン ---------- */
+
+  main { padding: 44px 40px 100px; min-width: 0; }
+
+  @media (max-width: 860px) { main { padding: 32px 20px 80px; } }
+
+  .doc-header { margin-bottom: 40px; }
+
+  .doc-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .doc-eyebrow::before {
+    content: "";
+    width: 18px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .doc-header h1 {
+    font-size: 30px;
+    margin: 0 0 10px;
+    letter-spacing: 0.01em;
+  }
+
+  .doc-sub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    max-width: 60ch;
+    margin: 0;
+  }
+
+  section { margin-bottom: 56px; scroll-margin-top: 24px; }
+
+  section h2 {
+    font-size: 20px;
+    margin: 0 0 6px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  section h2 .num {
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    font-family: inherit;
+    margin-right: 10px;
+  }
+
+  .lede {
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    margin: 14px 0 20px;
+    max-width: 68ch;
+  }
+
+  h3 {
+    font-size: 15.5px;
+    margin: 26px 0 10px;
+    color: var(--ink);
+  }
+
+  p { max-width: 68ch; }
+
+  /* ---------- 画面マップ(モックアップ) ---------- */
+
+  .mockup {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    margin: 18px 0 8px;
+  }
+
+  .mockup-toolbar {
+    background: var(--accent-ink);
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .mockup-toolbar .m-title {
+    color: #fff;
+    font-size: 12.5px;
+    opacity: 0.85;
+    width: 100%;
+    margin-bottom: 2px;
+  }
+
+  .m-btn {
+    font-size: 12px;
+    padding: 6px 11px;
+    border-radius: 4px;
+    background: #3a5ba8;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .m-btn.alt { background: #4b5768; }
+  .m-btn.primary { background: #2563eb; }
+
+  .mockup-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  @media (max-width: 640px) { .mockup-grid { grid-template-columns: 1fr; } }
+
+  .m-field {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .m-field .m-legend {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .m-tag {
+    font-size: 9.5px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.02em;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .m-line {
+    height: 7px;
+    border-radius: 2px;
+    background: var(--surface-alt);
+    margin: 5px 0;
+  }
+  .m-line.w60 { width: 60%; }
+  .m-line.w80 { width: 80%; }
+  .m-line.w40 { width: 40%; }
+
+  /* ---------- ワークフロー ---------- */
+
+  .flow {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    margin-top: 16px;
+  }
+
+  .flow-step {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+  .flow-step:last-child { border-bottom: none; }
+
+  .flow-num {
+    background: var(--surface-alt);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 18px;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "Meiryo", sans-serif;
+    font-size: 15px;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    border-right: 1px solid var(--border);
+  }
+
+  .flow-body { padding: 16px 20px; }
+
+  .flow-body h3 { margin: 0 0 6px; font-size: 14.5px; }
+  .flow-body p { margin: 0; font-size: 13.5px; color: var(--ink-soft); }
+  .flow-body .op { color: var(--ink); font-weight: 600; }
+
+  /* ---------- テーブル ---------- */
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 480px;
+    font-size: 13.5px;
+    background: var(--surface);
+  }
+
+  caption {
+    text-align: left;
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  th {
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-strong);
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  code {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    background: var(--surface-alt);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.92em;
+    color: var(--ink);
+  }
+
+  /* ---------- コールアウト ---------- */
+
+  .note {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .note strong { color: var(--ink); }
+  .note.caution { border-left-color: var(--stamp); }
+  .note.caution strong { color: var(--stamp); }
+
+  /* ---------- 印影設定カード ---------- */
+
+  .stamp-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin: 18px 0;
+  }
+  @media (max-width: 640px) { .stamp-grid { grid-template-columns: 1fr; } }
+
+  .stamp-setting {
+    border: 1px dashed var(--border-strong);
+    border-radius: 8px;
+    padding: 14px 16px;
+    background: var(--surface);
+  }
+  .stamp-setting.is-primary { border-color: var(--stamp); background: var(--stamp-soft); }
+
+  .stamp-setting-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stamp-setting.is-primary .stamp-setting-label { color: var(--stamp); }
+
+  .stamp-setting-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .stamp-setting-field {
+    flex: 1;
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+  .stamp-setting-field .sv {
+    display: block;
+    margin-top: 3px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface-alt);
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .kbd-list { margin: 8px 0 0; padding-left: 20px; color: var(--ink-soft); font-size: 13.5px; }
+  .kbd-list li { margin-bottom: 4px; }
+
+  .em-red { color: var(--stamp); font-weight: 700; }
+
+  .faq dt { font-weight: 600; margin-top: 18px; color: var(--ink); font-size: 14px; }
+  .faq dt::before { content: "Q. "; color: var(--accent); }
+  .faq dd { margin: 6px 0 0; color: var(--ink-soft); font-size: 13.5px; max-width: 66ch; }
+  .faq dd::before { content: "A. "; color: var(--ink-faint); }
+
+  footer { border-top: 1px solid var(--border); padding-top: 18px; font-size: 12px; color: var(--ink-faint); }
+</style>
+
+<div class="shell">
+  <nav class="toc">
+    <div class="toc-brand">
+      <div class="toc-mark">雄電</div>
+      <div class="toc-brand-text">STAFF INVOICE<br>MANUAL</div>
+    </div>
+    <ol>
+      <li><a href="#overview">アプリの概要</a></li>
+      <li><a href="#screen">画面の見方</a></li>
+      <li><a href="#workflow">基本操作の流れ</a></li>
+      <li><a href="#open">請求書データを開く・確認する</a></li>
+      <li><a href="#satei">工事査定欄の記入</a></li>
+      <li><a href="#breakdown">査定内訳の記入</a></li>
+      <li><a href="#print">印刷・PDF出力</a></li>
+      <li><a href="#save">保存する</a></li>
+      <li><a href="#faq">注意事項・Q&amp;A</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="doc-header">
+      <div class="doc-eyebrow">OPERATION MANUAL</div>
+      <h1>社員用請求書アプリ 操作マニュアル</h1>
+      <p class="doc-sub">雄電社の社員向けに、「社員用請求書アプリ(雄電社様式)」の使い方をまとめたドキュメントです。協力会社(業者)から届いた請求書のデータを開き、工事査定欄・査定内訳を記入して印刷するまでの流れを説明します。</p>
+    </header>
+
+    <section id="overview">
+      <h2><span class="num">01</span>アプリの概要</h2>
+      <p class="lede">ブラウザ(Google Chrome または Microsoft Edge)で次のURLを開いて使います。インストールは不要で、開いた請求書のデータがインターネットへ送信されることはありません。すべての処理は開いているブラウザの中で完結します。</p>
+      <p class="lede"><code>https://shar19-ops.github.io/invoice-staff-app/</code></p>
+      <p class="lede">業者は、配布した業者用アプリ「雄電社指定請求書」で請求書を作成し、JSONファイル(<code>.json</code>)で提出します。社員用アプリはこのファイルを開き、査定を記入して、査定入りの請求書を印刷・保存します。</p>
+      <div class="note">
+        <strong>業者が入力した欄は変更できません。</strong> 社員用アプリで記入できるのは「工事査定欄」と「査定内訳」だけです。業者の記入に誤りがあるときは、業者に修正を依頼してください。
+      </div>
+    </section>
+
+    <section id="screen">
+      <h2><span class="num">02</span>画面の見方</h2>
+      <p class="lede">画面は、上部のツールバー、左側の入力欄、右側の請求書のプレビューで構成されています。入力した査定は、すぐに右側のプレビューに反映されます。</p>
+
+      <div class="mockup">
+        <div class="mockup-toolbar">
+          <div class="m-title">社員用請求書アプリ(雄電社様式)</div>
+          <span class="m-btn primary">保存</span>
+          <span class="m-btn primary">ファイルに保存</span>
+          <span class="m-btn primary">ファイルを開く</span>
+          <span class="m-btn primary">印刷 / PDF出力</span>
+          <span class="m-btn alt">帳票の向き: A4縦</span>
+          <span class="m-btn alt">用紙の色: 青</span>
+        </div>
+        <div class="mockup-grid">
+          <div class="m-field">
+            <div class="m-legend">査定上の注意事項</div>
+            <div class="m-line w80"></div><div class="m-line w60"></div>
+          </div>
+          <div class="m-field">
+            <div class="m-legend">工事査定欄 <span class="m-tag">社員記入</span></div>
+            <div class="m-line w80"></div><div class="m-line w60"></div><div class="m-line w40"></div>
+          </div>
+          <div class="m-field">
+            <div class="m-legend">査定内訳 <span class="m-tag">社員記入</span></div>
+            <div class="m-line w80"></div><div class="m-line w60"></div>
+          </div>
+          <div class="m-field">
+            <div class="m-legend">基本情報・取引先情報・請求内訳 <span class="m-tag">閲覧のみ</span></div>
+            <div class="m-line w80"></div><div class="m-line w60"></div><div class="m-line w40"></div>
+          </div>
+        </div>
+      </div>
+      <p class="lede" style="margin-top:10px; font-size:12.5px;">※実際の入力欄を簡略化した図です。</p>
+      <ul class="kbd-list">
+        <li><strong>青い枠</strong>の「工事査定欄」「査定内訳」が、社員が記入する欄です。</li>
+        <li><strong>灰色で点線の枠</strong>の欄は、業者が入力した内容(閲覧のみ)や自動計算の欄です。変更はできません。</li>
+      </ul>
+    </section>
+
+    <section id="workflow">
+      <h2><span class="num">03</span>基本操作の流れ</h2>
+      <p class="lede">業者から請求書のデータを受け取ってから、査定入りの請求書を印刷するまでの標準的な手順です。</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-num">1</div>
+          <div class="flow-body">
+            <h3>業者から届いたJSONファイルを保存する</h3>
+            <p>メールに添付された請求書のデータ(<code>.json</code>)を、パソコンの任意のフォルダに保存します。</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">2</div>
+          <div class="flow-body">
+            <h3>ファイルを開く</h3>
+            <p><span class="op">「ファイルを開く」</span>で保存したファイルを選びます。業者が入力した内容と電子印が、そのまま表示されます(<a href="#open">04章</a>)。</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">3</div>
+          <div class="flow-body">
+            <h3>記入事項を確認する</h3>
+            <p>「査定上の注意事項」に従い、記入事項にもれがないか確認します。</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">4</div>
+          <div class="flow-body">
+            <h3>工事査定欄を記入する</h3>
+            <p>11行の査定額を入力します。左に業者の請求額が表示されるので、見比べながら入力できます(<a href="#satei">05章</a>)。</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">5</div>
+          <div class="flow-body">
+            <h3>査定内訳を記入する</h3>
+            <p>今回請求額と消費税額を、それぞれ現金と手形に分けて入力します。合計が工事査定欄と合っているか、「確認」に表示されます(<a href="#breakdown">06章</a>)。</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">6</div>
+          <div class="flow-body">
+            <h3>印刷・保存する</h3>
+            <p><span class="op">「印刷 / PDF出力」</span>で査定入りの請求書を印刷し、<span class="op">「ファイルに保存」</span>で査定入りのデータを保存します(<a href="#print">07章</a>・<a href="#save">08章</a>)。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="open">
+      <h2><span class="num">04</span>請求書データを開く・確認する</h2>
+      <ul class="kbd-list">
+        <li><span class="op">「ファイルを開く」</span>で、業者から届いたJSONファイル、または以前に社員用アプリで保存した査定入りのファイルを選びます。査定入りのファイルを開いた場合は、記入済みの査定もそのまま表示されます。</li>
+        <li>別のファイルを開くと、画面の内容はそのファイルの内容に置き換わります。</li>
+        <li>業者の電子印(社印)は業者が置いた位置のまま表示され、社員用アプリでは動かせません。</li>
+      </ul>
+      <div class="note caution">
+        <strong>査定上の注意事項</strong> 担当者は記入事項にもれがないか確認の上、査定欄に記入してください。確認する項目は、<strong>工番、工事件名、注文番号、区分、取引先CD、適格請求書発行事業者の登録番号、請求額、工事査定欄、査定内訳</strong>です。社印のない請求書は受理できません。
+      </div>
+    </section>
+
+    <section id="satei">
+      <h2><span class="num">05</span>工事査定欄の記入</h2>
+      <p class="lede">「工事査定欄(社員記入)」の表に、契約工事請求内訳の11行それぞれの査定額を入力します。すべて手入力です(自動計算はしません)。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>列</th><th>内容</th></tr></thead>
+          <tbody>
+            <tr><td>項目</td><td>注文金額/電気工事契約額/消費税額①/電気工事出来高(納入)額/電気工事同×%内額/電気工事既支払額/消費税既支払額②/電気工事今回請求額/消費税額③/残高/消費税残額④</td></tr>
+            <tr><td>請求額(業者)</td><td>業者が請求した金額(参考表示)</td></tr>
+            <tr><td>査定額(円)</td><td>査定した金額を入力します。請求書の「工事査定欄」に1桁ずつ印字されます</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="kbd-list">
+        <li>金額はカンマ付き(例: <code>9,800,000</code>)や全角数字でも入力できます。</li>
+        <li>空欄の行は印字されません。0 を入力した行も印字されません。</li>
+      </ul>
+    </section>
+
+    <section id="breakdown">
+      <h2><span class="num">06</span>査定内訳の記入</h2>
+      <p class="lede">「査定内訳(社員記入)」の表に、支払いの内訳を現金と手形に分けて入力します。請求書の「査定内訳」欄(上下2組)に印字されます。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>組</th><th>入力する金額</th><th>照らし合わせる工事査定欄</th></tr></thead>
+          <tbody>
+            <tr><td>上の組(今回請求額)</td><td>今回請求額(消費税抜き)の 現金/手形</td><td>電気工事今回請求額</td></tr>
+            <tr><td>下の組(消費税額)</td><td>その消費税額の 現金/手形</td><td>消費税額③</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="kbd-list">
+        <li>「確認」の列に、現金+手形の合計が表示されます。工事査定欄の金額と合っていれば<strong style="color:#047857">「✓」</strong>、違っていれば<strong style="color:#b91c1c">赤字で差額</strong>が表示されます。</li>
+        <li>合っていなくても印刷・保存はできます。印刷する前に見直してください。</li>
+        <li>使わない欄(例: 手形がないとき)は空欄のままにしてください。</li>
+      </ul>
+    </section>
+
+    <section id="print">
+      <h2><span class="num">07</span>印刷・PDF出力</h2>
+      <p class="lede"><span class="op">「印刷 / PDF出力」</span>を押すと、ブラウザの印刷画面が開きます。</p>
+      <ul class="kbd-list">
+        <li>査定入りの請求書が<strong>2部</strong>印刷されます。<strong>②経理部控(青)</strong>と<strong>③事業所控(赤)</strong>です。ツールバーの「用紙の色」で選んだ色が1枚目になります。</li>
+        <li>帳票の向きが<strong>A4縦</strong>のときは、用紙はA4縦です。印刷画面の倍率は100%(実際のサイズ)にしてください。<strong>A4横(旧様式)</strong>のときは、B5横の用紙に縮小して印刷されます。</li>
+        <li>PDFで保存する場合は、印刷画面の送信先で「PDFに保存」を選びます。ファイル名は「請求書_注文番号…_業者名_査定」になります。</li>
+      </ul>
+    </section>
+
+    <section id="save">
+      <h2><span class="num">08</span>保存する</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ボタン</th><th>保存先</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td><span class="op">保存</span></td><td>このブラウザの中(下書き)</td><td>作業の一時保存。次にアプリを開いたときに自動で内容が復元されます。</td></tr>
+            <tr><td><span class="op">ファイルに保存</span></td><td>パソコンの任意のフォルダ</td><td>業者のデータに査定を加えたJSONファイルを作成します。ファイル名は「請求書_注文番号…_業者名_査定.json」。控えの保管や、他の社員への受け渡しに使います。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <strong>入力するたびに自動でブラウザ内に保存されます。</strong> ただし、このブラウザ・この端末だけに保存される一時的なものです。査定の記録を残すときは<strong>「ファイルに保存」</strong>で保存してください。
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2><span class="num">09</span>注意事項・Q&amp;A</h2>
+      <dl class="faq">
+        <dt>業者の入力した金額や社名を直したい。</dt>
+        <dd>社員用アプリでは変更できません。業者に修正を依頼し、修正したファイルを再提出してもらってください。</dd>
+        <dt>査定内訳の「確認」が赤字になります。</dt>
+        <dd>現金+手形の合計が、工事査定欄の「電気工事今回請求額」(上の組)または「消費税額③」(下の組)と合っていません。表示された差額を見て、どちらかを直してください。</dd>
+        <dt>業者の電子印がありません。</dt>
+        <dd>社印のない請求書は受理できません。業者に、電子印を押したファイルの再提出、または印刷して押印した請求書の郵送を依頼してください。</dd>
+        <dt>以前に査定したファイルを開き直したい。</dt>
+        <dd>「ファイルに保存」で保存した査定入りのファイルを「ファイルを開く」で選ぶと、査定も含めて表示されます。</dd>
+        <dt>以前のA4横の請求書で印刷したい。</dt>
+        <dd>ツールバーの「帳票の向き」で「A4横(旧様式)」を選んでください。B5横の用紙に縮小して印刷されます。</dd>
+        <dt>新規作成のボタンがありません。</dt>
+        <dd>社員用アプリは、業者から届いたデータに査定を記入するためのものです。請求書を新しく作ることはできません。</dd>
+      </dl>
+    </section>
+
+    <footer>
+      社員用請求書アプリ 操作マニュアル　2026年11月版(v2026.11.21)
+    </footer>
+  </main>
+</div>
+</html>
