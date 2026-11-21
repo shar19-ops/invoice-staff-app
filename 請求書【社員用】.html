@@ -52,6 +52,15 @@ body {
   background: #4b5563 !important;
 }
 
+/* 提出(業者用): 目立つよう緑 */
+#btnSubmit {
+  background: #059669 !important;
+  font-weight: bold;
+}
+#btnSubmit:hover {
+  background: #047857 !important;
+}
+
 .theme-select {
   margin-left: auto;
   font-size: 13px;
@@ -489,6 +498,8 @@ body.staff-app .satei-table {
     <button id="btnNew" class="vendor-only">新規作成</button>
     <button id="btnSave">保存</button>
     <button id="btnSaveFile">ファイルに保存</button>
+    <!-- 提出: 今は「ファイルに保存」と同じ(将来の形は検討中) -->
+    <button id="btnSubmit" class="vendor-only" title="提出用のファイル(.json)を保存します">提出</button>
     <button id="btnOpenFile">ファイルを開く</button>
     <input type="file" id="fileInput" accept="application/json" style="display:none">
     <button id="btnPrint">印刷 / PDF出力</button>
@@ -506,7 +517,7 @@ body.staff-app .satei-table {
     </label>
   </div>
   <p class="hint staff-only">業者から届いた請求書のデータ(.json)を「ファイルを開く」で開き、左の「工事査定欄」「査定内訳」に金額を入れてください。業者が入力した欄は変更できません。「ファイルに保存」で査定を入れたデータを保存でき、「印刷 / PDF出力」で査定入りの請求書(②経理部控・③事業所控)を印刷できます。</p>
-  <p class="hint vendor-only">「保存」はブラウザ内に自動保存します。「ファイルに保存」は任意のフォルダにファイルとして保存し、「ファイルを開く」でそのファイルを読み込めます。「印刷 / PDF出力」を押すと印刷ダイアログが開きます。出力先で「PDFに保存」を選ぶとPDFが作成できます。プレビュー上の文字位置は実物用紙との微調整が必要な場合があります。</p>
+  <p class="hint vendor-only">「提出」を押すと提出用のファイル(.json)を保存します。電子印があれば、そのファイルを雄電社の担当者宛のメールに添付して送ってください(電子印がなければ印刷して押印のうえ郵送)。「保存」はブラウザ内に自動保存します。「ファイルに保存」は任意のフォルダにファイルとして保存し、「ファイルを開く」でそのファイルを読み込めます。「印刷 / PDF出力」を押すと印刷ダイアログが開きます。出力先で「PDFに保存」を選ぶとPDFが作成できます。プレビュー上の文字位置は実物用紙との微調整が必要な場合があります。</p>
 </div>
 
 <div class="layout">
@@ -640,7 +651,7 @@ body.staff-app .satei-table {
         <label class="readonly-field">消費税残額④ <span class="calc-value" id="calc_tax4">0</span></label>
       </div>
       <label class="readonly-field total-field">■請求金額(今回分) <span class="calc-value" id="calc_total">0</span></label>
-      <p class="form-hint">税率は消費税額①のみ入力し、②③④には自動的に同じ税率が入ります。注文金額=契約額+消費税額①、電気工事同内額=出来高額×選択した%、今回請求額=同額-既支払額、残高=契約額-出来高額、請求金額=今回請求額+消費税額③として自動計算します。</p>
+      <p class="form-hint">税率は消費税額①のみ入力し、②③④には自動的に同じ税率が入ります。注文金額=契約額+消費税額①、電気工事同内額=出来高額×選択した%、今回請求額=同額-既支払額、残高=契約額-出来高額、請求金額=今回請求額+消費税額③として自動計算します。消費税額と電気工事同内額は、1円未満を切り捨てます。</p>
     </fieldset>
   </section>
 
@@ -691,7 +702,7 @@ const PORTRAIT_BLOCKS = [
 // バージョンは更新して配布するたびに書き換える(業者用は配布ファイル名の _v1 と同じ、社員用は更新日)
 const APP_INFO = {
   vendor: { title: "雄電社指定請求書", version: "v1", storageKey: "invoiceApp.draft.yudensha" },
-  staff:  { title: "社員用請求書アプリ(雄電社様式)", version: "v2026.11.21", storageKey: "invoiceApp.draft.staff" }
+  staff:  { title: "社員用請求書アプリ(雄電社様式)", version: "v2026.11.22", storageKey: "invoiceApp.draft.staff" }
 };
 const APP_MODE = (() => {
   if (document.body.dataset.bundled !== "1") {
@@ -939,6 +950,12 @@ function syncTaxRates() {
   ["taxRate2", "taxRate3", "taxRate4"].forEach(id => setField(id, rate1));
 }
 
+// 1円未満を切り捨てる(0 の方向へ。マイナスのときも絶対値で切り捨て)。
+// 小数の計算誤差(例: 1234567.9999999 が 1234567 になる)を避けるため、先に小数第6位で丸めてから切り捨てる
+function yenDown(v) {
+  return Math.trunc(Math.round(v * 1e6) / 1e6);
+}
+
 function calcAmounts() {
   syncTaxRates();
 
@@ -948,14 +965,15 @@ function calcAmounts() {
   const taxRate1 = num("taxRate1");
   const retainedRate = num("retainedRate");
 
-  const tax1 = contractAmount * taxRate1 / 100;
+  // 消費税額・内額は1円未満を切り捨てる(記入上の注意 10。2026-11-22 四捨五入から変更)
+  const tax1 = yenDown(contractAmount * taxRate1 / 100);
   const orderAmount = contractAmount + tax1;
-  const retained = progressAmount * retainedRate / 100;
-  const tax2 = paidAmount * taxRate1 / 100;
+  const retained = yenDown(progressAmount * retainedRate / 100);
+  const tax2 = yenDown(paidAmount * taxRate1 / 100);
   const billing = retained - paidAmount;
-  const tax3 = billing * taxRate1 / 100;
+  const tax3 = yenDown(billing * taxRate1 / 100);
   const balance = contractAmount - progressAmount;
-  const tax4 = balance * taxRate1 / 100;
+  const tax4 = yenDown(balance * taxRate1 / 100);
   const total = billing + tax3;
 
   return { orderAmount, contractAmount, tax1, progressAmount, retained, paidAmount, tax2, billing, tax3, balance, tax4, total };
@@ -1327,17 +1345,20 @@ function saveDraft() {
 }
 
 // 保存するファイル名・印刷(PDF)の名前。社員用は「_査定」を付ける
+// 名前の付け方は「請求書_業者名_工番_請求日(yyyymmdd)」(2026-11-22 ユーザー指定)。
+// **経理に確認したうえで直す予定**(仮の決め方)。空欄の部分は飛ばす。社員用は最後に「_査定」を付ける
 function baseFileName() {
   const data = collectFormData();
-  const no = data.orderNo ? `注文番号${data.orderNo}` : todayIso();
-  const vendor = String(data.vendorName || "").replace(/[\\/:*?"<>|\s]/g, "");
-  return `請求書_${no}${vendor ? "_" + vendor : ""}${IS_STAFF ? "_査定" : ""}`;
+  const clean = (s) => String(s || "").replace(/[\\/:*?"<>|\s]/g, "");
+  const parts = [clean(data.vendorName), clean(data.projectNo), clean(data.invoiceDate).replace(/-/g, "")].filter(Boolean);
+  return ["請求書", ...parts].join("_") + (IS_STAFF ? "_査定" : "");
 }
 
 function suggestedFileName() {
   return baseFileName() + ".json";
 }
 
+// 保存できたら true(保存先を選ぶ画面で取り消したときや失敗したときは false)
 async function saveToFile() {
   saveDraft();
   const data = collectFormData();
@@ -1352,10 +1373,11 @@ async function saveToFile() {
       const writable = await handle.createWritable();
       await writable.write(json);
       await writable.close();
+      return true;
     } catch (err) {
       if (err.name !== "AbortError") alert("保存に失敗しました: " + err.message);
+      return false;
     }
-    return;
   }
 
   const blob = new Blob([json], { type: "application/json" });
@@ -1367,6 +1389,16 @@ async function saveToFile() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  return true;
+}
+
+// 「提出」ボタン(業者用)。今は「ファイルに保存」と同じ(提出用のJSONを保存し、メールでの送り方を案内する)。
+// **将来どうするか(メール作成・アップロード等)は検討中**(2026-11-22 ユーザー指定で、まず保存と同じ機能で追加)
+async function submitInvoice() {
+  if (!(await saveToFile())) return;
+  alert(stampDataUrl
+    ? "提出用のファイルを保存しました。\n保存したファイル(.json)を、雄電社の担当者宛のメールに添付して送ってください。"
+    : "提出用のファイルを保存しました。\n電子印がないため、「印刷 / PDF出力」で印刷し、②・③に社印を押印のうえ郵送してください。");
 }
 
 function applyLoadedData(data) {
@@ -1511,6 +1543,7 @@ document.addEventListener("DOMContentLoaded", () => {
     alert("保存しました。");
   });
   document.getElementById("btnSaveFile").addEventListener("click", saveToFile);
+  document.getElementById("btnSubmit").addEventListener("click", submitInvoice);
   document.getElementById("btnOpenFile").addEventListener("click", openFromFile);
   document.getElementById("fileInput").addEventListener("change", async (e) => {
     const file = e.target.files[0];
