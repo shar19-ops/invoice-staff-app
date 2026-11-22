@@ -747,7 +747,7 @@ const PORTRAIT_BLOCKS = [
 // バージョンは更新して配布するたびに書き換える(業者用は配布ファイル名の _v1 と同じ、社員用は更新日)
 const APP_INFO = {
   vendor: { title: "雄電社指定請求書", version: "v1", storageKey: "invoiceApp.draft.yudensha" },
-  staff:  { title: "社員用請求書アプリ(雄電社様式)", version: "v2026.11.22.4", storageKey: "invoiceApp.draft.staff" }
+  staff:  { title: "社員用請求書アプリ(雄電社様式)", version: "v2026.11.22.5", storageKey: "invoiceApp.draft.staff" }
 };
 const APP_MODE = (() => {
   if (document.body.dataset.bundled !== "1") {
@@ -1298,9 +1298,20 @@ function buildOverlay(layer, data, calc, enableStampDrag) {
   SATEI_ROWS.forEach(row => {
     addDigitGridRight(layer, COORDS.sateiColRight, dw, r[row.key].y, amtStr(sateiNum(satei[row.key])), "ov-num");
   });
-  SATEI_BREAKDOWN.forEach(g => g.cells.forEach(cell => {
-    addDigitGridRight(layer, COORDS.sateiBreakdownRight, dw, cell.y, amtStr(sateiNum(satei[cell.key])), "ov-num");
-  }));
+  // 査定内訳は「¥」付きで、0円も「¥0」と印字する(空欄にしない。2026-11-22 ユーザー指定)。
+  // ただし査定が入っていないデータ(業者用の印刷など)では印字しない
+  if (Object.keys(satei).length) {
+    SATEI_BREAKDOWN.forEach(g => g.cells.forEach(cell => {
+      const n = Math.round(sateiNum(satei[cell.key]));
+      addDigitGridRightWithYen(layer, COORDS.sateiBreakdownRight, dw, cell.y, String(n), "ov-num");
+    }));
+  }
+}
+
+// 「¥」付きの金額(マイナスは「▲¥」)。0 は「¥0」
+function yenWithMark(n) {
+  const v = Math.round(n || 0);
+  return (v < 0 ? MINUS_MARK : "") + "¥" + Math.abs(v).toLocaleString("ja-JP");
 }
 
 // ===== 査定(社員用) =====
@@ -1402,8 +1413,9 @@ function updateSateiDisplay(calc) {
     document.getElementById("satei_req_" + row.key).textContent = yen(calc[row.calc]);
     if (row.auto) document.getElementById("satei_auto_" + row.key).textContent = show(row.key);
   });
+  // 査定内訳は「¥」付き。0円(現金の割合が未入力のときも)は「¥0」と表示し、空欄にしない
   SATEI_BREAKDOWN.forEach(g => g.cells.forEach(c => {
-    document.getElementById("satei_auto_" + c.key).textContent = show(c.key);
+    document.getElementById("satei_auto_" + c.key).textContent = yenWithMark(satei[c.key]);
   }));
   document.getElementById("satei_billRate").textContent =
     satei.cashRate === undefined ? "" : `(手形 ${Math.round((100 - satei.cashRate) * 100) / 100} %)`;
