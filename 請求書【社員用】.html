@@ -575,8 +575,7 @@ body.staff-app .satei-table {
       <summary>記入上の注意</summary>
       <ol>
         <li>枠内すべて記入願います。</li>
-        <li>請求書は②、③を提出して下さい。</li>
-        <li>②、③は必ず社印を押印して下さい。社印のないものは受理できません。</li>
+        <li>必ず社印を押印して下さい。社印のないものは受理できません。</li>
         <li>請求は同一現場でも、注文書単位でご請求下さい。</li>
         <li>適格請求書発行業者の方は登録番号を必ず記入して下さい。</li>
         <li>注文番号、取引コード、登録番号(適格請求書発行業者のみ)記入なき場合は、査定いたしかねる場合がございます。</li>
@@ -997,7 +996,7 @@ function calcAmounts() {
   const taxRate1 = num("taxRate1");
   const retainedRate = num("retainedRate");
 
-  // 消費税額・内額は1円未満を切り捨てる(記入上の注意 10。2026-11-22 四捨五入から変更)
+  // 消費税額・内額は1円未満を切り捨てる(記入上の注意の消費税の項。2026-11-22 四捨五入から変更)
   const tax1 = yenDown(contractAmount * taxRate1 / 100);
   const orderAmount = contractAmount + tax1;
   const retained = yenDown(progressAmount * retainedRate / 100);
@@ -1449,7 +1448,7 @@ async function submitInvoice() {
   if (!(await saveToFile())) return;
   alert(stampDataUrl
     ? "提出用のファイルを保存しました。\n保存したファイル(.json)を、雄電社の担当者宛のメールに添付して送ってください。"
-    : "提出用のファイルを保存しました。\n電子印がないため、「印刷 / PDF出力」で印刷し、②・③に社印を押印のうえ郵送してください。");
+    : "提出用のファイルを保存しました。\n電子印がないため、「印刷 / PDF出力」で印刷し、社印を押印のうえ郵送してください。");
 }
 
 function applyLoadedData(data) {
