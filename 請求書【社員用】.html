@@ -245,6 +245,29 @@ legend {
   border: 2px solid #3b82f6;
 }
 
+/* 今回請求額がマイナスのとき: 今回請求額・請求金額の欄を赤く(script.js が .is-minus を付ける) */
+.readonly-field.is-minus {
+  background: #fee2e2;
+  border: 2px solid #dc2626;
+}
+.readonly-field.is-minus .calc-value {
+  color: #b91c1c;
+}
+.minus-warning {
+  margin: -4px 0 12px;
+  padding: 8px 10px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-left: 4px solid #dc2626;
+  border-radius: 4px;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: bold;
+}
+.minus-warning[hidden] {
+  display: none;
+}
+
 .total-field .calc-value {
   font-size: 20px;
   color: #1d4ed8;
@@ -552,8 +575,7 @@ body.staff-app .satei-table {
       <summary>記入上の注意</summary>
       <ol>
         <li>枠内すべて記入願います。</li>
-        <li>請求書は②、③を提出して下さい。</li>
-        <li>②、③は必ず社印を押印して下さい。社印のないものは受理できません。</li>
+        <li>必ず社印を押印して下さい。社印のないものは受理できません。</li>
         <li>請求は同一現場でも、注文書単位でご請求下さい。</li>
         <li>適格請求書発行業者の方は登録番号を必ず記入して下さい。</li>
         <li>注文番号、取引コード、登録番号(適格請求書発行業者のみ)記入なき場合は、査定いたしかねる場合がございます。</li>
@@ -651,6 +673,8 @@ body.staff-app .satei-table {
         <label class="readonly-field">消費税残額④ <span class="calc-value" id="calc_tax4">0</span></label>
       </div>
       <label class="readonly-field total-field">■請求金額(今回分) <span class="calc-value" id="calc_total">0</span></label>
+      <!-- 今回請求額がマイナスのときだけ表示(script.js の updateCalcDisplay) -->
+      <p class="minus-warning" id="minusWarning" hidden>⚠ 今回請求額(電気工事同内額 − 既支払額)がマイナスになっています。出来高(納入)額・内額の%・既支払額に誤りがないか確認してください。<span class="vendor-only">マイナスの金額のまま提出することもできます。</span></p>
       <p class="form-hint">税率は消費税額①のみ入力し、②③④には自動的に同じ税率が入ります。注文金額=契約額+消費税額①、電気工事同内額=出来高額×選択した%、今回請求額=同額-既支払額、残高=契約額-出来高額、請求金額=今回請求額+消費税額③として自動計算します。消費税額と電気工事同内額は、1円未満を切り捨てます。</p>
     </fieldset>
   </section>
@@ -705,7 +729,7 @@ const PORTRAIT_BLOCKS = [
 // バージョンは更新して配布するたびに書き換える(業者用は配布ファイル名の _v1 と同じ、社員用は更新日)
 const APP_INFO = {
   vendor: { title: "雄電社指定請求書", version: "v1", storageKey: "invoiceApp.draft.yudensha" },
-  staff:  { title: "社員用請求書アプリ(雄電社様式)", version: "v2026.11.22.2", storageKey: "invoiceApp.draft.staff" }
+  staff:  { title: "社員用請求書アプリ(雄電社様式)", version: "v2026.11.22.3", storageKey: "invoiceApp.draft.staff" }
 };
 const APP_MODE = (() => {
   if (document.body.dataset.bundled !== "1") {
@@ -915,8 +939,12 @@ function num(id) {
   return isNaN(v) ? 0 : v;
 }
 
+// マイナスは「▲」で表す(画面・印刷とも。2026-11-22 ユーザー指定。見積書アプリと同じ)
+const MINUS_MARK = "▲";
+
 function yen(n) {
-  return Math.round(n || 0).toLocaleString("ja-JP");
+  const v = Math.round(n || 0);
+  return (v < 0 ? MINUS_MARK : "") + Math.abs(v).toLocaleString("ja-JP");
 }
 
 function amtStr(n) {
@@ -968,7 +996,7 @@ function calcAmounts() {
   const taxRate1 = num("taxRate1");
   const retainedRate = num("retainedRate");
 
-  // 消費税額・内額は1円未満を切り捨てる(記入上の注意 10。2026-11-22 四捨五入から変更)
+  // 消費税額・内額は1円未満を切り捨てる(記入上の注意の消費税の項。2026-11-22 四捨五入から変更)
   const tax1 = yenDown(contractAmount * taxRate1 / 100);
   const orderAmount = contractAmount + tax1;
   const retained = yenDown(progressAmount * retainedRate / 100);
@@ -992,6 +1020,12 @@ function updateCalcDisplay(c) {
   document.getElementById("calc_balance").textContent = yen(c.balance);
   document.getElementById("calc_tax4").textContent = yen(c.tax4);
   document.getElementById("calc_total").textContent = yen(c.total);
+
+  // 今回請求額(電気工事同内額 − 既支払額)がマイナスのときは、今回請求額・請求金額の欄を赤くして注意書きを出す。
+  // マイナスは基本ないが、マイナスのままの提出もできる(止めない。2026-11-22 ユーザー指定)
+  const minus = c.billing < 0;
+  ["calc_billing", "calc_total"].forEach(id => document.getElementById(id).closest(".readonly-field").classList.toggle("is-minus", minus));
+  document.getElementById("minusWarning").hidden = !minus;
 }
 
 function makeSpan(xPx, yPx, text, extraClass) {
@@ -1117,21 +1151,25 @@ function addOverlayCenter(layer, x0Px, x1Px, yPx, text, extraClass) {
   layer.appendChild(span);
 }
 
-// 右端(rightXPx)を基準に、桁区切りなしで1桁ごとに右から配置する
+// 右端(rightXPx)を基準に、桁区切りなしで1桁ごとに右から配置する。マイナス("-"付き)は数字の1桁手前に「▲」
 function addDigitGridRight(layer, rightXPx, colWidthPx, yPx, numStr, extraClass) {
   if (!numStr) return;
-  const digits = String(numStr).split("");
+  const minus = String(numStr).startsWith("-");
+  const digits = String(numStr).replace(/^-/, "").split("");
   const startX = rightXPx - digits.length * colWidthPx;
+  if (minus) addOverlay(layer, startX - colWidthPx, yPx, MINUS_MARK, extraClass);
   digits.forEach((ch, i) => {
     addOverlay(layer, startX + i * colWidthPx, yPx, ch, extraClass);
   });
 }
 
-// 桁ごとグリッドの直前に¥マークを添える
+// 桁ごとグリッドの直前に¥マークを添える(マイナスは「▲¥」。見積書アプリと同じ並び)
 function addDigitGridRightWithYen(layer, rightXPx, colWidthPx, yPx, numStr, extraClass) {
   if (!numStr) return;
-  const digits = String(numStr).split("");
+  const minus = String(numStr).startsWith("-");
+  const digits = String(numStr).replace(/^-/, "").split("");
   const startX = rightXPx - digits.length * colWidthPx;
+  if (minus) addOverlay(layer, startX - colWidthPx * 1.8, yPx, MINUS_MARK, extraClass);
   addOverlay(layer, startX - colWidthPx * 0.8, yPx, "¥", extraClass);
   digits.forEach((ch, i) => {
     addOverlay(layer, startX + i * colWidthPx, yPx, ch, extraClass);
@@ -1246,9 +1284,9 @@ function buildOverlay(layer, data, calc, enableStampDrag) {
 
 // ===== 査定(社員用) =====
 
-// 査定の入力値を数値に(空欄は 0。カンマや全角数字も読む)
+// 査定の入力値を数値に(空欄は 0。カンマや全角数字も読む。マイナスは「-」のほか「▲」「△」でもよい)
 function sateiNum(v) {
-  const s = String(v ?? "").replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).replace(/[,，\s]/g, "").replace(/[－ー−]/g, "-");
+  const s = String(v ?? "").replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).replace(/[,，\s]/g, "").replace(/[－ー−▲△]/g, "-");
   const n = parseFloat(s);
   return isNaN(n) ? 0 : n;
 }
@@ -1404,10 +1442,13 @@ async function saveToFile() {
 // 「提出」ボタン(業者用)。今は「ファイルに保存」と同じ(提出用のJSONを保存し、メールでの送り方を案内する)。
 // **将来どうするか(メール作成・アップロード等)は検討中**(2026-11-22 ユーザー指定で、まず保存と同じ機能で追加)
 async function submitInvoice() {
+  // 請求金額がマイナスのときは確認する(マイナスのままでも提出できる)
+  const total = calcAmounts().total;
+  if (total < 0 && !confirm(`請求金額が ${yen(total)} 円(マイナス)になっています。\n出来高(納入)額・既支払額などを確認してください。\n\nこのまま提出しますか?`)) return;
   if (!(await saveToFile())) return;
   alert(stampDataUrl
     ? "提出用のファイルを保存しました。\n保存したファイル(.json)を、雄電社の担当者宛のメールに添付して送ってください。"
-    : "提出用のファイルを保存しました。\n電子印がないため、「印刷 / PDF出力」で印刷し、②・③に社印を押印のうえ郵送してください。");
+    : "提出用のファイルを保存しました。\n電子印がないため、「印刷 / PDF出力」で印刷し、社印を押印のうえ郵送してください。");
 }
 
 function applyLoadedData(data) {
