@@ -496,18 +496,36 @@ body.staff-app .satei-table {
   text-align: right;
   font-size: 15px;
 }
-.satei-breakdown .satei-sum {
-  font-size: 12px;
-  white-space: normal;
-  min-width: 120px;
-}
-.satei-sum.ok {
-  color: #047857;
+/* 自動計算の欄(手では直せない): 入力欄と同じ大きさの灰色・点線の枠に右寄せで表示 */
+.satei-auto {
+  display: block;
+  min-height: 37px;
+  padding: 8px 10px;
+  background: #dfe5ec;
+  border: 1px dashed #94a3b8;
+  border-radius: 4px;
+  text-align: right;
+  font-size: 15px;
   font-weight: bold;
+  color: #1f2937;
 }
-.satei-sum.ng {
-  color: #b91c1c;
-  font-weight: bold;
+.satei-auto-tag {
+  font-size: 10px;
+  font-weight: normal;
+  color: #475569;
+  background: #dfe5ec;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-left: 4px;
+}
+.satei-rate-row input {
+  display: inline-block !important;
+  width: 90px !important;
+}
+.satei-bill-rate {
+  margin-left: 8px;
+  color: #475569;
+  font-weight: normal;
 }
 </style>
 </head>
@@ -560,15 +578,15 @@ body.staff-app .satei-table {
         <thead><tr><th>項目</th><th>請求額(業者)</th><th>査定額(円)</th></tr></thead>
         <tbody id="sateiRows"></tbody>
       </table>
-      <p class="form-hint">11行とも、査定した金額を入れてください(空欄の行は印字しません)。</p>
+      <p class="form-hint">入力するのは白い欄の4行(電気工事契約額・出来高(納入)額・同×%内額・既支払額)だけです。注文金額・消費税額①〜④・今回請求額・残高は自動で計算します(消費税は業者の税率で、1円未満切捨て)。金額は入力を終えるとカンマ付きで表示されます。0の行は印字しません。</p>
     </fieldset>
     <fieldset class="staff-only satei-fieldset">
       <legend>査定内訳(社員記入)</legend>
       <table class="satei-table satei-breakdown">
-        <thead><tr><th></th><th>現金(円)</th><th>手形(円)</th><th>確認</th></tr></thead>
+        <thead><tr><th></th><th>現金(円)</th><th>手形(円)</th></tr></thead>
         <tbody id="sateiBreakdownRows"></tbody>
       </table>
-      <p class="form-hint">上の組は今回請求額(税抜)、下の組はその消費税額を、現金と手形に分けて入れます。「確認」に、合計が工事査定欄の「電気工事今回請求額」「消費税額③」と合っているかを表示します。</p>
+      <p class="form-hint">「現金の割合」(%)を入れると、工事査定欄の「電気工事今回請求額」(上の組)と「消費税額③」(下の組)を現金と手形に分けます。現金 = 金額 × 現金の割合(1円未満切捨て)、手形 = 残りです。</p>
     </fieldset>
 
     <details class="notes-box vendor-only" open>
@@ -729,7 +747,7 @@ const PORTRAIT_BLOCKS = [
 // バージョンは更新して配布するたびに書き換える(業者用は配布ファイル名の _v1 と同じ、社員用は更新日)
 const APP_INFO = {
   vendor: { title: "雄電社指定請求書", version: "v1", storageKey: "invoiceApp.draft.yudensha" },
-  staff:  { title: "社員用請求書アプリ(雄電社様式)", version: "v2026.11.22.3", storageKey: "invoiceApp.draft.staff" }
+  staff:  { title: "社員用請求書アプリ(雄電社様式)", version: "v2026.11.22.4", storageKey: "invoiceApp.draft.staff" }
 };
 const APP_MODE = (() => {
   if (document.body.dataset.bundled !== "1") {
@@ -741,27 +759,30 @@ const APP_MODE = (() => {
 const IS_STAFF = APP_MODE === "staff";
 const STORAGE_KEY = APP_INFO[APP_MODE].storageKey;
 
-// 工事査定欄(契約工事請求内訳の右の欄)。社員が11行とも手入力する。calc は業者の請求額(calcAmounts の値)
+// 工事査定欄(契約工事請求内訳の右の欄)。calc は業者の請求額(calcAmounts の値)。
+// 2026-11-22(ユーザー指定): 手入力は契約額・出来高額・同内額・既支払額の4行(input)、
+// 注文金額・消費税①〜④・今回請求額・残高は自動計算(auto。手では直せない)。計算は業者用と同じ(消費税は1円未満切捨て)
 const SATEI_ROWS = [
-  { key: "orderAmount",    label: "注文金額",               calc: "orderAmount" },
+  { key: "orderAmount",    label: "注文金額",               calc: "orderAmount",    auto: true },
   { key: "contractAmount", label: "電気工事契約額",         calc: "contractAmount" },
-  { key: "tax1",           label: "消費税額①",              calc: "tax1" },
+  { key: "tax1",           label: "消費税額①",              calc: "tax1",           auto: true },
   { key: "progressAmount", label: "電気工事出来高(納入)額", calc: "progressAmount" },
   { key: "retainedAmount", label: "電気工事同×%内額",       calc: "retained" },
   { key: "paidAmount",     label: "電気工事既支払額",       calc: "paidAmount" },
-  { key: "tax2",           label: "消費税既支払額②",        calc: "tax2" },
-  { key: "billingAmount",  label: "電気工事今回請求額",     calc: "billing" },
-  { key: "tax3",           label: "消費税額③",              calc: "tax3" },
-  { key: "balanceAmount",  label: "残高",                   calc: "balance" },
-  { key: "tax4",           label: "消費税残額④",            calc: "tax4" }
+  { key: "tax2",           label: "消費税既支払額②",        calc: "tax2",           auto: true },
+  { key: "billingAmount",  label: "電気工事今回請求額",     calc: "billing",        auto: true },
+  { key: "tax3",           label: "消費税額③",              calc: "tax3",           auto: true },
+  { key: "balanceAmount",  label: "残高",                   calc: "balance",        auto: true },
+  { key: "tax4",           label: "消費税残額④",            calc: "tax4",           auto: true }
 ];
-// 査定内訳: 上の組 = 今回請求額(税抜)、下の組 = その消費税額。それぞれ現金・手形に分ける(ユーザー指定)。
-// y は帳票の各行の印字位置(横の帳票 150dpi px)。check は内訳の合計と照らし合わせる工事査定欄の行
+const SATEI_INPUT_KEYS = SATEI_ROWS.filter(r => !r.auto).map(r => r.key);
+// 査定内訳: 上の組 = 今回請求額(税抜)、下の組 = その消費税額③。それぞれ現金・手形に分ける。
+// 社員は「現金の%」(cashRate)だけ入れ、両方の組に同じ割合を使う。現金 = 金額×現金%(1円未満切捨て)、手形 = 残り(2026-11-22 ユーザー指定)。
+// y は帳票の各行の印字位置(横の帳票 150dpi px)。from は分ける元の工事査定欄の行
 const SATEI_BREAKDOWN = [
-  { label: "今回請求額(税抜)", check: "billingAmount", cells: [{ key: "cash1", y: 648 }, { key: "bill1", y: 695 }] },
-  { label: "消費税額",         check: "tax3",          cells: [{ key: "cash2", y: 743 }, { key: "bill2", y: 790 }] }
+  { label: "今回請求額(税抜)", from: "billingAmount", cells: [{ key: "cash1", y: 648 }, { key: "bill1", y: 695 }] },
+  { label: "消費税額③",       from: "tax3",          cells: [{ key: "cash2", y: 743 }, { key: "bill2", y: 790 }] }
 ];
-const SATEI_KEYS = [...SATEI_ROWS.map(r => r.key), ...SATEI_BREAKDOWN.flatMap(g => g.cells.map(c => c.key))];
 let loadedSatei = null; // 業者用で、査定入りのデータを開いたときにそのまま保存し直すための控え
 
 const fieldIds = [
@@ -1291,65 +1312,101 @@ function sateiNum(v) {
   return isNaN(n) ? 0 : n;
 }
 
+// 査定の入力欄の値を桁区切り(カンマ)付きに整える(マイナスは「▲」)。空欄・数でないものはそのまま
+function formatSateiInput(el) {
+  const raw = el.value.trim();
+  if (raw === "") return;
+  const n = sateiNum(raw);
+  if (n === 0 && !/[0０]/.test(raw)) return; // 数として読めない入力は触らない
+  el.value = yen(n);
+}
+
+// 手入力の4行と現金の%から、工事査定欄の自動計算の行と査定内訳を計算する。
+// 何も入っていなければ空({})。数はすべて円単位の数値(印字・保存にそのまま使う)
+function computeSatei(input, taxRate) {
+  const filled = SATEI_INPUT_KEYS.some(k => input[k] !== undefined && input[k] !== "");
+  if (!filled) return {};
+  const v = {};
+  SATEI_INPUT_KEYS.forEach(k => { v[k] = Math.round(sateiNum(input[k])); });
+  v.tax1 = yenDown(v.contractAmount * taxRate / 100);
+  v.orderAmount = v.contractAmount + v.tax1;
+  v.tax2 = yenDown(v.paidAmount * taxRate / 100);
+  v.billingAmount = v.retainedAmount - v.paidAmount;
+  v.tax3 = yenDown(v.billingAmount * taxRate / 100);
+  v.balanceAmount = v.contractAmount - v.progressAmount;
+  v.tax4 = yenDown(v.balanceAmount * taxRate / 100);
+  if (input.cashRate !== undefined && input.cashRate !== "") {
+    const rate = Math.min(Math.max(sateiNum(input.cashRate), 0), 100);
+    v.cashRate = rate;
+    SATEI_BREAKDOWN.forEach(g => {
+      const amount = v[g.from];
+      const cash = yenDown(amount * rate / 100);
+      v[g.cells[0].key] = cash;          // 現金
+      v[g.cells[1].key] = amount - cash; // 手形(残り)
+    });
+  }
+  return v;
+}
+
+// 画面の入力から査定を読む(手入力の値と自動計算の値をまとめたもの。保存・印字に使う)
 function readSatei() {
-  const satei = {};
-  SATEI_KEYS.forEach(key => {
+  const input = {};
+  [...SATEI_INPUT_KEYS, "cashRate"].forEach(key => {
     const el = document.getElementById("satei_" + key);
-    if (el && el.value !== "") satei[key] = el.value;
+    if (el && el.value.trim() !== "") input[key] = el.value.trim();
   });
-  return satei;
+  return computeSatei(input, num("taxRate1"));
 }
 
 function writeSatei(satei) {
-  SATEI_KEYS.forEach(key => {
+  [...SATEI_INPUT_KEYS, "cashRate"].forEach(key => {
     const el = document.getElementById("satei_" + key);
-    if (el) el.value = (satei && satei[key] !== undefined) ? satei[key] : "";
+    if (!el) return;
+    const v = satei ? satei[key] : undefined;
+    el.value = (v === undefined || v === "") ? "" : String(v);
+    if (key !== "cashRate") formatSateiInput(el);
   });
 }
 
-// 社員用の入力欄(工事査定欄 11行・査定内訳 2組)を作る
+// 社員用の入力欄(工事査定欄 11行・査定内訳 2組＋現金の%)を作る
 function renderSateiInputs() {
   const rows = document.getElementById("sateiRows");
   rows.innerHTML = SATEI_ROWS.map(row => `
-    <tr>
-      <th>${row.label}</th>
+    <tr${row.auto ? ' class="satei-auto-row"' : ""}>
+      <th>${row.label}${row.auto ? ' <span class="satei-auto-tag">自動</span>' : ""}</th>
       <td class="satei-req" id="satei_req_${row.key}"></td>
-      <td><input type="text" inputmode="numeric" id="satei_${row.key}" autocomplete="off"></td>
+      <td>${row.auto
+        ? `<span class="satei-auto" id="satei_auto_${row.key}"></span>`
+        : `<input type="text" inputmode="numeric" id="satei_${row.key}" class="satei-money" autocomplete="off">`}</td>
     </tr>`).join("");
   const bd = document.getElementById("sateiBreakdownRows");
-  bd.innerHTML = SATEI_BREAKDOWN.map((g, i) => `
-    <tr>
-      <th>${g.label}</th>
-      <td><input type="text" inputmode="numeric" id="satei_${g.cells[0].key}" autocomplete="off"></td>
-      <td><input type="text" inputmode="numeric" id="satei_${g.cells[1].key}" autocomplete="off"></td>
-      <td class="satei-sum" id="satei_sum_${i}"></td>
+  bd.innerHTML = `
+    <tr class="satei-rate-row">
+      <th>現金の割合</th>
+      <td colspan="2"><input type="text" inputmode="decimal" id="satei_cashRate" autocomplete="off" placeholder="例: 60"> %
+        <span class="satei-bill-rate" id="satei_billRate"></span></td>
+    </tr>` + SATEI_BREAKDOWN.map(g => `
+    <tr class="satei-auto-row">
+      <th>${g.label} <span class="satei-auto-tag">自動</span></th>
+      <td><span class="satei-auto" id="satei_auto_${g.cells[0].key}"></span></td>
+      <td><span class="satei-auto" id="satei_auto_${g.cells[1].key}"></span></td>
     </tr>`).join("");
 }
 
-// 請求額(業者)の表示と、査定内訳の合計の照合(工事査定欄の今回請求額・消費税額③と合っているか)
+// 請求額(業者)の表示と、自動計算の欄(工事査定欄・査定内訳)の表示
 function updateSateiDisplay(calc) {
   if (!IS_STAFF) return;
+  const satei = readSatei();
+  const show = (key) => (satei[key] === undefined ? "" : yen(satei[key]));
   SATEI_ROWS.forEach(row => {
     document.getElementById("satei_req_" + row.key).textContent = yen(calc[row.calc]);
+    if (row.auto) document.getElementById("satei_auto_" + row.key).textContent = show(row.key);
   });
-  const satei = readSatei();
-  SATEI_BREAKDOWN.forEach((g, i) => {
-    const filled = g.cells.some(c => satei[c.key] !== undefined);
-    const sum = g.cells.reduce((s, c) => s + sateiNum(satei[c.key]), 0);
-    const target = sateiNum(satei[g.check]);
-    const el = document.getElementById("satei_sum_" + i);
-    const checkLabel = SATEI_ROWS.find(r => r.key === g.check).label;
-    if (!filled) {
-      el.textContent = "";
-      el.className = "satei-sum";
-    } else if (sum === target) {
-      el.textContent = `計 ${yen(sum)} ✓`;
-      el.className = "satei-sum ok";
-    } else {
-      el.textContent = `計 ${yen(sum)}(${checkLabel}の査定 ${yen(target)} と ${yen(sum - target)} 違います)`;
-      el.className = "satei-sum ng";
-    }
-  });
+  SATEI_BREAKDOWN.forEach(g => g.cells.forEach(c => {
+    document.getElementById("satei_auto_" + c.key).textContent = show(c.key);
+  }));
+  document.getElementById("satei_billRate").textContent =
+    satei.cashRate === undefined ? "" : `(手形 ${Math.round((100 - satei.cashRate) * 100) / 100} %)`;
 }
 
 // 社員用の画面にする: 業者が入力した欄は閲覧のみ(変更不可)、業者用だけの操作は隠す
@@ -1581,10 +1638,16 @@ document.addEventListener("DOMContentLoaded", () => {
   loadDraft();
 
   // 査定の入力欄(社員用)
-  document.querySelectorAll(".satei-table").forEach(t => t.addEventListener("input", () => {
-    renderPreview();
-    saveDraft();
-  }));
+  document.querySelectorAll(".satei-table").forEach(t => {
+    t.addEventListener("input", () => {
+      renderPreview();
+      saveDraft();
+    });
+    // 金額の欄は、入力を終えたら桁区切り(カンマ)付きに整える
+    t.addEventListener("focusout", (e) => {
+      if (e.target.classList && e.target.classList.contains("satei-money")) formatSateiInput(e.target);
+    });
+  });
 
   document.getElementById("btnNew").addEventListener("click", newInvoice);
   document.getElementById("orientation").addEventListener("change", onOrientationChange);
